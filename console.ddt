@@ -1,0 +1,141 @@
+#ifndef console_ddt
+#define console_ddt
+
+#define _WIN32_WINNT 0x0500
+
+/******************************************************************************/
+/*         Biblioteka stworzona na potrzeby kursu programowania C++           */
+/******************************************************************************/
+/*         Autor: Piotr Szawdyñski            Ÿród³o: http://ddt.pl           */
+/*         Wersja: 1.0           Ostatnia aktualizacja: 8 maja 2007           */
+/*         Przeznaczone œrodowisko: Dev-C++                                   */
+/*         Obs³ugiwane systemy operacyjne: Windows                            */
+/*         Plik zawieraj¹cy dokumentacjê biblioteki: ddt-console.pdf          */
+/******************************************************************************/
+/*   Biblioteka nie mo¿e byæ rozpowszechniana bez kompletnej dokumentacji.    */
+/*   Za bibliotekê nie mog¹ byæ pobierane jakiekolwiek op³aty.                */
+/*   Niniejsza biblioteka jest darmowa.                                       */
+/*   Bibliotekê mo¿e pobraæ ka¿dy ze strony http://ddt.pl                     */
+/*   Bibliotekê mo¿na u¿ywaæ do celów edukacyjnych jak i komercyjnych.        */
+/*   Plik nie mo¿e byæ rozpowszechniany, jeœli zostanie cokolwiek w nim       */
+/*   zmienione. Dotyczy to równie¿ komentarzy!                                */
+/******************************************************************************/
+/*   Biblioteka nie powinna sprawiaæ ¿adnych problemów, pod warunkiem i¿      */
+/*   nie bêd¹ wprowadzane do niej jakiekolwiek zmiany.                        */
+/******************************************************************************/
+/*   Autor nie ponosi odpowiedzialnoœci za b³êdne funkcjonowanie biblioteki.  */
+/*   Niniejsz¹ bibliotekê uruchamiasz na w³asne ryzyko.                       */
+/******************************************************************************/
+#include <windows.h>
+/******************************************************************************/
+namespace ddt
+{
+  namespace console
+  {
+    RECT rcClient, rcWindow;        // RECT to struktura opisujaca pozycje prostokata                                                                                                                                          
+    HWND hwnd = GetConsoleWindow(); //pobieramy uchwyt do konsoli
+    int szerokosc = (rcWindow.right - rcClient.right - rcWindow.left + 1024);
+    int wysokosc = (rcWindow.bottom - rcClient.bottom - rcWindow.top + 768);
+    
+    HANDLE DDTxDefaultConsoleHandle=NULL;
+    WORD DDTxCurrentColor;
+    void textattr(WORD kolor);
+    void init(void)
+    {
+     
+      GetClientRect(hwnd, &rcClient);    //pobieramy info o rozmiarze obszaru roboczego okna
+      GetWindowRect(hwnd, &rcWindow);    //pobieramy info o rozmiarze calosci okna
+        
+      DDTxDefaultConsoleHandle=GetStdHandle(STD_OUTPUT_HANDLE);
+      SMALL_RECT tRozmiar={0, 0,
+                           (rcWindow.right - rcClient.right - rcWindow.left + 1024),
+                           (rcWindow.bottom - rcClient.bottom - rcWindow.top + 768)};
+      SetConsoleWindowInfo(DDTxDefaultConsoleHandle,true,&tRozmiar);
+      SetConsoleTitle("Dokumentacja na stronie: http://ddt.pl");
+      textattr(7);
+    }
+    void gotoxy(int x,int y)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      COORD tPosition={x-1,y-1};
+      SetConsoleCursorPosition(DDTxDefaultConsoleHandle,tPosition);
+      return;
+    }
+    void textattr(WORD kolor)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      DDTxCurrentColor=kolor;
+      SetConsoleTextAttribute(DDTxDefaultConsoleHandle,DDTxCurrentColor);
+      return;
+    }
+    void textcolor(int kolor)
+    {
+      textattr((DDTxCurrentColor&0xf0)+kolor%16);
+    }
+    void textbackground(int kolor)
+    {
+      textattr((DDTxCurrentColor&0x0f)+(kolor%16)*16);
+    }
+    void SetCursor(bool fVisible=true)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      CONSOLE_CURSOR_INFO ConCurInf;
+      ConCurInf.dwSize = 10;
+      ConCurInf.bVisible = fVisible;
+      SetConsoleCursorInfo(DDTxDefaultConsoleHandle,&ConCurInf);
+    }
+    void clrscr(void)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      DWORD written;
+      FillConsoleOutputAttribute (DDTxDefaultConsoleHandle, DDTxCurrentColor, szerokosc * wysokosc, (COORD) {0, 0}, &written);
+      FillConsoleOutputCharacter (DDTxDefaultConsoleHandle, ' ', szerokosc * wysokosc, (COORD) {0, 0}, &written);
+      gotoxy(1, 1);
+      return;
+    }
+    int wherex(void)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      CONSOLE_SCREEN_BUFFER_INFO tConsoleInfo;
+      GetConsoleScreenBufferInfo(DDTxDefaultConsoleHandle,&tConsoleInfo);
+      return(tConsoleInfo.dwCursorPosition.X+1);
+    }
+    int wherey(void)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      CONSOLE_SCREEN_BUFFER_INFO tConsoleInfo;
+      GetConsoleScreenBufferInfo(DDTxDefaultConsoleHandle,&tConsoleInfo);
+      return(tConsoleInfo.dwCursorPosition.Y+1);
+    }
+    int title(const char* tytul)
+    {
+      if(DDTxDefaultConsoleHandle==NULL) init();
+      SetConsoleTitle(tytul);
+    }
+    void flushconsole(int width, int height)
+    {
+         RECT rcClient, rcWindow;    // RECT to struktura opisujaca pozycje prostokata
+         POINT ptDiff;                // POINT to pozycja opisujaca wspolrzedne punktu
+         HWND hwnd;                    // HWND to uchwyt do okna
+
+         hwnd = GetConsoleWindow();        //pobieramy uchwyt do konsoli
+         GetClientRect(hwnd, &rcClient);    //pobieramy info o rozmiarze obszaru roboczego okna
+         GetWindowRect(hwnd, &rcWindow);    //pobieramy info o rozmiarze calosci okna
+
+         ptDiff.x = (rcWindow.right - rcWindow.left) - rcClient.right;        //roznica szerokosci obszarow
+         ptDiff.y = (rcWindow.bottom - rcWindow.top) - rcClient.bottom;        //roznica wysokosci obszarow
+
+         MoveWindow(hwnd, rcWindow.left, rcWindow.top, width + ptDiff.x, height + ptDiff.y, TRUE);        //zmiana pozycji i rozmiaru okna
+    }
+    int resize(int width, int height)
+    {
+      COORD size;
+      size.X = width;
+      size.Y = height;
+      SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), size);
+      flushconsole(1024,768);
+      return GetLastError();
+    }
+ }
+}
+#endif//console_ddt
