@@ -291,7 +291,7 @@ bool new_map()
      
      textcolor(15);
      gotoxy(1, 40);
-     cout << " CZY NAPEWNO ? [T/N]";
+     cout << " CZY NA PEWNO ? [T/N]";
      char znak;
      do
      {
